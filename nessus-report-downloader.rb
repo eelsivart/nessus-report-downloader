@@ -3,8 +3,8 @@
 # Name: Nessus Report Downloader
 # Author: Travis Lee
 #
-# Version: 1.0
-# Last Updated: 3/12/2014
+# Version: 1.01
+# Last Updated: 3/14/2014
 #
 # Description:  Interactive script that connects to a specified Nessus server using the
 #				Nessus REST API to automate mass report downloads. It has the ability to download
@@ -18,7 +18,7 @@
 #				Hosts Summary (Executive), Suggested Remediations, Compliance Check (Executive), 
 #				and Compliance Check.
 #
-# Requires: nokogiri
+# Requires: nokogiri (gem install nokogiri)
 #
 # Usage: ruby ./nessus-report-downloader.rb
 #
@@ -30,11 +30,12 @@ require 'net/http'
 require 'nokogiri'
 require 'fileutils'
 require 'io/console'
+require 'date'
 
 # This method will download the specified file type from specified reports
 def report_download(http, headers, reports, reports_to_dl, filetypes_to_dl, chapters_to_dl, rpath)
 	begin
-		puts "\r\nDownloading report(s). Please wait..."
+		puts "\nDownloading report(s). Please wait..."
 
 		# if all reports are selected
 		if reports_to_dl[0].eql?("all")
@@ -47,6 +48,7 @@ def report_download(http, headers, reports, reports_to_dl, filetypes_to_dl, chap
 		
 		# iterate through all the indexes and download the reports
 		reports_to_dl.each do |rep|
+			rep = rep.strip
 			filetypes_to_dl.each do |ft|
 			
 				# different paths if csv or nbe or nessus
@@ -101,7 +103,7 @@ def report_download(http, headers, reports, reports_to_dl, filetypes_to_dl, chap
 		end
 		
 	rescue StandardError => download_report_error
-		puts "\r\n\nError downloading report: #{download_report_error}\r\n\n"
+		puts "\n\nError downloading report: #{download_report_error}\n\n"
 		exit
 	end
 end
@@ -117,14 +119,19 @@ def get_report_list(http, headers, seq)
 		doc = Nokogiri::XML(resp.body)
 		root = doc.root
 		reports = root.xpath("contents/reports/report")
-		puts "Number of reports found: #{reports.count}"
+		puts "Number of reports found: #{reports.count}\n\n"
+
+		printf("%-7s %-50s %-30s %-57s %-15s\n", "Index", "Name", "Last Updated", "UUID", "Status")
+		printf("%-7s %-50s %-30s %-57s %-15s\n", "-----", "----", "------------", "----", "------")
+
+		# print out all the reports
 		reports.each_with_index do |report,idx|
-			puts "[#{idx}] Name: #{report.at_xpath("readableName").text} | GUID: #{report.at_xpath("name").text} | Status: #{report.at_xpath("status").text}"
+			printf("%-7s %-50s %-30s %-57s %-15s\n", "[#{idx}]", report.at_xpath("readableName").text, DateTime.strptime(report.at_xpath("timestamp").text,'%s').strftime('%b %e, %Y %H:%M %Z'), report.at_xpath("name").text, report.at_xpath("status").text)
 		end
 		return reports
 		
 	rescue StandardError => get_report_error
-		puts "\r\n\nError getting report list: #{get_report_error}\r\n\n"
+		puts "\n\nError getting report list: #{get_report_error}\n\n"
 		exit
 	end
 end
@@ -148,17 +155,17 @@ def get_token(http, username, password, seq)
 		return headers
 		
 	rescue StandardError => get_token_error
-		puts "\r\n\nError logging in/getting token: #{get_token_error}\r\n\n"
+		puts "\n\nError logging in/getting token: #{get_token_error}\n\n"
 		exit
 	end
 end
 
 ### MAIN ###
 
-puts "\r\nNessus Report Downloader 1.0"
+puts "\nNessus Report Downloader 1.01"
 
 # Collect server info
-print "\r\nEnter the Nessus Server IP: "
+print "\nEnter the Nessus Server IP: "
 nserver = gets.chomp.to_s
 print "Enter the Nessus Server Port [8834]: "
 nserverport = gets.chomp.to_s
@@ -182,18 +189,18 @@ seq = "6969"
 headers = get_token(http, username, password, seq)
 
 # get list of reports
-puts "\r\n\nGetting report list..."
+puts "\n\nGetting report list..."
 reports = get_report_list(http, headers, seq)
 print "Enter the report(s) your want to download (comma separate list) or 'all': "
 reports_to_dl = (gets.chomp.to_s).split(",")
 
 if reports_to_dl.count == 0
-	puts "\r\nError! You need to choose at least one report!\r\n\n"
+	puts "\nError! You need to choose at least one report!\n\n"
 	exit
 end
 
 # select file types to download
-puts "\r\nChoose File Type(s) to Download: "
+puts "\nChoose File Type(s) to Download: "
 puts "[0] .nessus - v2 (No chapter selection)"
 puts "[1] HTML"
 puts "[2] PDF"
@@ -203,7 +210,7 @@ print "Enter the file type(s) you want to download (comma separate list) or 'all
 filetypes_to_dl = (gets.chomp.to_s).split(",")
 
 if filetypes_to_dl.count == 0
-	puts "\r\nError! You need to choose at least one file type!\r\n\n"
+	puts "\nError! You need to choose at least one file type!\n\n"
 	exit
 end
 
@@ -211,7 +218,7 @@ end
 formats = []
 cSelect = false
 filetypes_to_dl.each do |ft|
-	case ft
+	case ft.strip
 	when "all"
 	  formats.push("nessus")
 	  formats.push("html")
@@ -236,7 +243,7 @@ end
 # select chapters to include, only show if html or pdf is in file type selection
 chapters = ""
 if cSelect
-	puts "\r\nChoose Chapter(s) to Include: "
+	puts "\nChoose Chapter(s) to Include: "
 	puts "[0] Vulnerabilities By Plugin"
 	puts "[1] Vulnerabilities By Host"
 	puts "[2] Hosts Summary (Executive)"
@@ -247,13 +254,13 @@ if cSelect
 	chapters_to_dl = (gets.chomp.to_s).split(",")
 
 	if chapters_to_dl.count == 0
-		puts "\r\nError! You need to choose at least one chapter!\r\n\n"
+		puts "\nError! You need to choose at least one chapter!\n\n"
 		exit
 	end
 
 	# see which chapters to download
 	chapters_to_dl.each do |chap|
-		case chap
+		case chap.strip
 		when "all"
 		  chapters << "vuln_hosts_summary;vuln_by_plugin;vuln_by_host;remediations;compliance_exec;compliance;"
 		when "0"
@@ -273,7 +280,7 @@ if cSelect
 end
 
 # create report folder
-print "\r\nPath to save reports to (without trailing slash): "
+print "\nPath to save reports to (without trailing slash): "
 rpath = gets.chomp.to_s
 unless File.directory?(rpath)
 	FileUtils.mkdir_p(rpath)
@@ -284,4 +291,4 @@ if formats.count > 0
 	report_download(http, headers, reports, reports_to_dl, formats, chapters, rpath)
 end
 
-puts "\r\nReport Download Completed!\r\n\n"
+puts "\nReport Download Completed!\n\n"

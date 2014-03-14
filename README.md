@@ -1,8 +1,10 @@
 Name: Nessus Report Downloader
+
 Author: Travis Lee
 
-Version: 1.0
-Last Updated: 3/12/2014
+Version: 1.01
+
+Last Updated: 3/14/2014
 
 Description:  
 Interactive script that connects to a specified Nessus server using the
@@ -24,7 +26,10 @@ Requires: nokogiri (gem install nokogiri)
 
 
 Usage: ruby ./nessus-report-downloader.rb
+
 Windows EXE Usage: .\nessus-report-downloader-1.0.exe
 
 
-
+Note 3/14/14: According to Tenable support, the "Status" field reported by the 
+API always shows as "completed" even though the status is in another state
+as shown in the GUI.
