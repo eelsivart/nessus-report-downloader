@@ -29,6 +29,7 @@ require 'fileutils'
 require 'io/console'
 require 'date'
 require 'json'
+require 'openssl'
 
 # This method will download the specified file type from specified reports
 def report_download(http, headers, reports, reports_to_dl, filetypes_to_dl, chapters_to_dl, rpath, db_export_pw)
