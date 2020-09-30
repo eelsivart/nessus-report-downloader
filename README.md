@@ -7,7 +7,7 @@ Version: 1.0
 Last Updated: 2/28/2016
 
 Description:  Interactive script that connects to a specified Nessus 6 server using the
-Nessus REST API to automate mass report downloads. It has the ability to download
+Nessus REST API to automate downloads of mass report. It has the ability to download
 multiple or all reports/file types/chapters and save them to a folder of
 your choosing. This has been tested with Nessus 6.5.5 and *should* work with
 Nessus 6+, YMMV.
